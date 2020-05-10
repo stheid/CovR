@@ -11,7 +11,7 @@ def gen_plot():
     r = requests.get(url, stream=True)
     df = pd.read_excel(io.BytesIO(r.content))
 
-    df = df.iloc[:, [0, 9, 10, 11]].dropna().reset_index(drop=True)
+    df = df.iloc[:, [0, 7, 8, 9]].dropna().reset_index(drop=True)
     df.columns = ['date', 'R', 'low', 'up']
 
     fig, ax = plt.subplots()
