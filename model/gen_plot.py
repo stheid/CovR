@@ -9,7 +9,7 @@ DPI = 90
 def gen_plot():
     url = "https://www.rki.de/DE/Content/InfAZ/N/Neuartiges_Coronavirus/Projekte_RKI/Nowcasting_Zahlen.xlsx?__blob=publicationFile"
     r = requests.get(url, stream=True)
-    df = pd.read_excel(io.BytesIO(r.content))
+    df = pd.read_excel(io.BytesIO(r.content), sheet_name='Nowcast_R')
 
     df = df.iloc[:, [0, 7, 8, 9]].dropna().reset_index(drop=True)
     df.columns = ['date', 'R', 'low', 'up']
