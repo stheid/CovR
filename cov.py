@@ -1,4 +1,5 @@
 from flask import Flask, send_file
+
 from model import gen_plot
 
 app = Flask(__name__)
