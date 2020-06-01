@@ -2,6 +2,9 @@ import pandas as pd
 import requests
 import io
 import matplotlib.pyplot as plt
+from datetime import date
+
+from matplotlib.ticker import MultipleLocator
 
 DPI = 90
 
@@ -14,12 +17,26 @@ def gen_plot():
     df = df.iloc[:, [0, 7, 8, 9]].dropna().reset_index(drop=True)
     df.columns = ['date', 'R', 'low', 'up']
 
+    today = date.today()
+
     fig, ax = plt.subplots()
-    ax.plot(df.date.iloc[[0, -1]], (1, 1), c='r')
     ax.fill_between(df.date, df.low, df.up, alpha=.5)
-    ax.plot(df.date, df.R)
-    ax.grid(which="both")
     ax.set_ylim((0, None))
+    ax.plot(df.date, df.R, marker='o', markersize=2)
+    # zero line
+    ax.plot((df.date.iloc[[0, -1]][0], today), (1, 1), c='r')
+    # today
+    ax.plot((today, today), ax.get_ylim(), c='.5', linestyle='--')
+    ax.annotate('Today', (today, 2.5), xytext=(.85, .75), textcoords='axes fraction',
+                arrowprops=dict(facecolor='black', width=.5),
+                fontsize=12,
+                horizontalalignment='left', verticalalignment='top')
+
+    ax.tick_params(which='minor', length=1)
+
+    ax.xaxis.set_minor_locator(MultipleLocator(7))
+    ax.grid(which="major")
+    ax.grid(which="minor", ls=':')
     ax.set_xlabel('date')
     plt.xticks(rotation=45)
     ax.set_ylabel('R')
@@ -27,6 +44,6 @@ def gen_plot():
     img = io.BytesIO()
     fig.set_size_inches(960 / DPI, 960 / 1.618 / DPI)
     fig.tight_layout()
-    fig.savefig(img, format='png', bbox='tight', dpi=DPI)
+    fig.savefig(img, format='svg', bbox='tight', dpi=DPI)
     img.seek(0)
     return img
