@@ -12,16 +12,18 @@ DPI = 90
 def gen_plot():
     url = "https://www.rki.de/DE/Content/InfAZ/N/Neuartiges_Coronavirus/Projekte_RKI/Nowcasting_Zahlen.xlsx?__blob=publicationFile"
     r = requests.get(url, stream=True)
-    df = pd.read_excel(io.BytesIO(r.content), sheet_name='Nowcast_R')
+    df_src = pd.read_excel(io.BytesIO(r.content), sheet_name='Nowcast_R')
 
-    df = df.iloc[:, [0, 7, 8, 9, 10, 11, 12]].dropna().reset_index(drop=True)
-    df.columns = ['date', 'R', 'low', 'up', 'R7', 'up7', 'low7']
+    df = df_src.iloc[:, [0, 7, 8, 9]].dropna().reset_index(drop=True)
+    df.columns = ['date', 'R', 'low', 'up']
+    df7 = df_src.iloc[:, [0, 10, 11, 12]].dropna().reset_index(drop=True)
+    df7.columns = ['date', 'R', 'low', 'up']
 
     today = date.today()
 
     fig, ax = plt.subplots()
-    ax.fill_between(df.date, df.low7, df.up7, alpha=.5)
-    ax.plot(df.date, df.R7, marker='o', markersize=2, label="7-day R", alpha=1)
+    ax.fill_between(df7.date, df7.low, df7.up, alpha=.5)
+    ax.plot(df7.date, df7.R, marker='o', markersize=2, label="7-day R", alpha=1)
     ax.plot(df.date, df.R, c='gray', label='daily R', alpha=.4)
     ax.legend()
     ax.set_ylim((0, None))
