@@ -13,7 +13,8 @@ def gen_plot():
     url = "https://www.rki.de/DE/Content/InfAZ/N/Neuartiges_Coronavirus/Projekte_RKI/Nowcasting_Zahlen.xlsx?__blob=publicationFile"
     r = requests.get(url, stream=True)
     df_src = pd.read_excel(io.BytesIO(r.content), sheet_name='Nowcast_R')
-
+    dfdeltacase = df_src.iloc[:, [0, 4]].dropna().reset_index(drop=True)
+    dfdeltacase.columns = ['date', 'deltacase']
     df = df_src.iloc[:, [0, 7, 8, 9]].dropna().reset_index(drop=True)
     df.columns = ['date', 'R', 'low', 'up']
     df7 = df_src.iloc[:, [0, 10, 11, 12]].dropna().reset_index(drop=True)
@@ -22,10 +23,13 @@ def gen_plot():
     today = date.today()
 
     fig, ax = plt.subplots()
+    ax2 = ax.twinx()
+    ax2.fill_between(dfdeltacase.date, 0, dfdeltacase.deltacase, label="daily cases", alpha=.15)
+    ax2.set_ylim((0, None))
     ax.fill_between(df7.date, df7.low, df7.up, alpha=.5)
     ax.plot(df7.date, df7.R, marker='o', markersize=2, label="7-day R", alpha=1)
     ax.plot(df.date, df.R, c='gray', label='daily R', alpha=.4)
-    ax.legend()
+    fig.legend(loc=(.7, .85))
     ax.set_ylim((0, None))
     # zero line
     ax.plot((df.date.iloc[[0, -1]][0], today), (1, 1), c='r')
@@ -43,7 +47,8 @@ def gen_plot():
     ax.grid(which="minor", ls=':')
     ax.set_xlabel('date')
     plt.xticks(rotation=45)
-    ax.set_ylabel('R')
+    ax.set_ylabel('Reproduction rate $R$')
+    ax2.set_ylabel('new daily cases')
 
     img = io.BytesIO()
     fig.set_size_inches(960 / DPI, 960 / 1.618 / DPI)
