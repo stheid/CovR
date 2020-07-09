@@ -2,6 +2,7 @@ import pandas as pd
 import requests
 import io
 import matplotlib.pyplot as plt
+from matplotlib.dates import WeekdayLocator, DateFormatter, DayLocator, MO
 from datetime import date
 
 from matplotlib.ticker import MultipleLocator
@@ -42,11 +43,13 @@ def gen_plot():
 
     ax.tick_params(which='minor', length=1)
 
-    ax.xaxis.set_minor_locator(MultipleLocator(7))
+    ax.xaxis.set_major_formatter(DateFormatter('%d. %h \'%y'))
+    ax.xaxis.set_major_locator(DayLocator([1, 15]))
+    ax.xaxis.set_minor_locator(WeekdayLocator(MO))
+    fig.autofmt_xdate(rotation=10)
     ax.grid(which="major")
     ax.grid(which="minor", ls=':')
     ax.set_xlabel('date')
-    plt.xticks(rotation=45)
     ax.set_ylabel('Reproduction rate $R$')
     ax2.set_ylabel('new daily cases')
 
