@@ -50,7 +50,7 @@ def gen_plot():
     ax.xaxis.set_major_formatter(DateFormatter('%d. %h \'%y'))
     ax.xaxis.set_major_locator(DayLocator([1, 15]))
     ax.xaxis.set_minor_locator(WeekdayLocator(MO))
-    fig.autofmt_xdate(rotation=10)
+    fig.autofmt_xdate(rotation=20)
     ax.grid(which="major")
     ax.grid(which="minor", ls=':', alpha=.5)
     ax.set_xlabel('date')
