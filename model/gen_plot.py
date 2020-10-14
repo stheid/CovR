@@ -33,7 +33,7 @@ def gen_plot():
     ax.set_ylim((0, None))
     ax2 = ax.twinx()
     ax2.fill_between(dfdeltacase.date, 0, dfdeltacase.deltacase, label="daily cases", alpha=.15)
-    ax2.set_ylim(tuple(map(mul,ax.get_ylim(),repeat(1000))))
+    ax2.set_ylim(tuple(map(mul,ax.get_ylim(),repeat(1500))))
 
     # zero line
     ax.plot((df.date.iloc[[0, -1]][0], today), (1, 1), c='r')
