@@ -1,12 +1,13 @@
-import pandas as pd
-from operator import mul
-from itertools import repeat
-import requests
 import io
-import matplotlib.pyplot as plt
-from matplotlib.dates import WeekdayLocator, DateFormatter, DayLocator, MO
 from datetime import date
+from itertools import repeat
+from operator import mul
 
+import cloudscraper
+import matplotlib.pyplot as plt
+import pandas as pd
+# import requests
+from matplotlib.dates import WeekdayLocator, DateFormatter, DayLocator, MO
 from matplotlib.ticker import MultipleLocator
 
 DPI = 90
@@ -14,7 +15,9 @@ DPI = 90
 
 def gen_plot():
     url = "https://www.rki.de/DE/Content/InfAZ/N/Neuartiges_Coronavirus/Projekte_RKI/Nowcasting_Zahlen.xlsx?__blob=publicationFile"
-    r = requests.get(url, stream=True)
+    # r = requests.get(url, stream=True)
+    scraper = cloudscraper.create_scraper()
+    r = scraper.get(url, stream=True)
     df_src = pd.read_excel(io.BytesIO(r.content), sheet_name='Nowcast_R')
     dfdeltacase = df_src.iloc[:, [0, 4]].dropna().reset_index(drop=True)
     dfdeltacase.columns = ['date', 'deltacase']
@@ -33,7 +36,7 @@ def gen_plot():
     ax.set_ylim((0, None))
     ax2 = ax.twinx()
     ax2.fill_between(dfdeltacase.date, 0, dfdeltacase.deltacase, label="daily cases", alpha=.15)
-    ax2.set_ylim(tuple(map(mul,ax.get_ylim(),repeat(3000))))
+    ax2.set_ylim(tuple(map(mul, ax.get_ylim(), repeat(3000))))
 
     # zero line
     ax.plot((df.date.iloc[[0, -1]][0], today), (1, 1), c='r')
