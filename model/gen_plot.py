@@ -1,5 +1,5 @@
 import io
-from datetime import date
+from datetime import date, datetime, timedelta
 from itertools import repeat
 from operator import mul
 
@@ -13,12 +13,22 @@ from matplotlib.ticker import MultipleLocator
 DPI = 90
 
 
+def convert_date(d):
+    try:
+        daynumber = int(d)
+        # the magical -2 is because of an well known implementation error in Excel
+        return datetime(1900, 1, 1) + timedelta(days=daynumber - 2)
+    except (ValueError, TypeError):
+        return d
+
+
 def gen_plot():
     url = "https://www.rki.de/DE/Content/InfAZ/N/Neuartiges_Coronavirus/Projekte_RKI/Nowcasting_Zahlen.xlsx?__blob=publicationFile"
-    # r = requests.get(url, stream=True)
     scraper = cloudscraper.create_scraper()
     r = scraper.get(url, stream=True)
     df_src = pd.read_excel(io.BytesIO(r.content), sheet_name='Nowcast_R')
+    df_src.iloc[:, [0]] = df_src.iloc[:, [0]].applymap(convert_date)
+
     dfdeltacase = df_src.iloc[:, [0, 4]].dropna().reset_index(drop=True)
     dfdeltacase.columns = ['date', 'deltacase']
     df = df_src.iloc[:, [0, 7, 8, 9]].dropna().reset_index(drop=True)
