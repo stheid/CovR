@@ -1,5 +1,5 @@
 import io
-from datetime import date, datetime, timedelta
+from datetime import date
 from itertools import repeat
 from operator import mul
 
@@ -13,39 +13,59 @@ from matplotlib.ticker import MultipleLocator
 DPI = 90
 
 
+def english_floats(f):
+    # convert all . to ,
+    return f.replace(',', '.')
+
+
+def remove_thousends(f):
+    return f.replace('.', '')
+
+
 def gen_plot():
     url = "https://www.rki.de/DE/Content/InfAZ/N/Neuartiges_Coronavirus/Projekte_RKI/Nowcasting_Zahlen.xlsx?__blob=publicationFile"
     df = (
         pd.read_excel(
-            io.BytesIO(cloudscraper.create_scraper().get(url, stream=True).content), 
-            sheet_name='Nowcast_R', 
-            na_values=['.'], 
+            io.BytesIO(cloudscraper.create_scraper().get(url, stream=True).content),
+            sheet_name='Nowcast_R',
+            na_values=['.'],
             engine='openpyxl',
             index_col='Datum des Erkrankungsbeginns',
             parse_dates=True,
-            date_parser=lambda s: pd.to_datetime(s, format="%d.%m.%Y")
+            date_parser=lambda s: pd.to_datetime(s, format="%d.%m.%Y"),
+            converters={4: remove_thousends,
+                        7: english_floats,
+                        8: english_floats,
+                        9: english_floats,
+                        10: english_floats,
+                        11: english_floats,
+                        12: english_floats}
         )
-        .rename_axis(index='date')
-        .pipe(lambda df:
-              pd.concat({
-                  'daily': df['Punktschätzer der Anzahl Neuerkrankungen'].rename('delta'),
-                  '4-day': df.rename(columns={
-                      'Punktschätzer der 4-Tages R-Wert': 'R',
-                      'Untere Grenze des 95%-Prädiktionsintervalls der 4-Tages R-Wert': 'low',
-                      'Obere Grenze des 95%-Prädiktionsintervalls der 4-Tages R-Wert': 'high',
-                  })[['R', 'low', 'high']],
-                  '7-day': df.rename(columns={
-                      'Punktschätzer des 7-Tage-R Wertes': 'R',
-                      'Untere Grenze des 95%-Prädiktionsintervalls des 7-Tage-R Wertes': 'low',
-                      'Obere Grenze des 95%-Prädiktionsintervalls des 7-Tage-R Wertes': 'high',
-                  })[['R', 'low', 'high']]
-              }, axis='columns')
-        )
+            .rename_axis(index='date')
+            .pipe(lambda df:
+                  pd.concat({
+                      'daily': df['Punktschätzer der Anzahl Neuerkrankungen'].rename('delta'),
+                      '4-day': df.rename(columns={
+                          'Punktschätzer der 4-Tages R-Wert': 'R',
+                          'Untere Grenze des 95%-Prädiktionsintervalls der 4-Tages R-Wert': 'low',
+                          'Obere Grenze des 95%-Prädiktionsintervalls der 4-Tages R-Wert': 'high',
+                      })[['R', 'low', 'high']],
+                      '7-day': df.rename(columns={
+                          'Punktschätzer des 7-Tage-R Wertes': 'R',
+                          'Untere Grenze des 95%-Prädiktionsintervalls des 7-Tage-R Wertes': 'low',
+                          'Obere Grenze des 95%-Prädiktionsintervalls des 7-Tage-R Wertes': 'high',
+                      })[['R', 'low', 'high']]
+                  }, axis='columns')
+                  )
     )
 
-    dfdeltacase = df.daily.reset_index()
-    df4 = df['4-day'].dropna().reset_index()
-    df7 = df['7-day'].dropna().reset_index()
+    dfdeltacase = df.daily.astype(dict(delta='int')).reset_index()
+    df4 = (df['4-day'].dropna()
+           .astype(dict(R='float', low='float', high='float'))
+           .reset_index())
+    df7 = (df['7-day'].dropna()
+           .astype(dict(R='float', low='float', high='float'))
+           .reset_index())
 
     today = date.today()
 
