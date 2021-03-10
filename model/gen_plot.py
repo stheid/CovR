@@ -13,62 +13,47 @@ from matplotlib.ticker import MultipleLocator
 DPI = 90
 
 
-def convert_date(d):
-    try:
-        daynumber = int(d)
-        # the magical -2 is because of an well known implementation error in Excel
-        return datetime(1900, 1, 1) + timedelta(days=daynumber - 2)
-    except (ValueError, TypeError):
-        pass
-    try:
-        return pd.to_datetime(d, format='%d.%m.%Y', errors='ignore')
-    except (ValueError, TypeError):
-        pass
-    return d
-
-
-def invert_decimal_sep(f):
-    # convert all . to , and vice versa
-    return f.replace(',', '.')
-
-
-def invert_thousends(f):
-    return f.replace('.', '')
-
-
 def gen_plot():
-    # download source data from rki and convert to dataframe
     url = "https://www.rki.de/DE/Content/InfAZ/N/Neuartiges_Coronavirus/Projekte_RKI/Nowcasting_Zahlen.xlsx?__blob=publicationFile"
-    scraper = cloudscraper.create_scraper()
-    r = scraper.get(url, stream=True)
-    df_src = pd.read_excel(io.BytesIO(r.content), sheet_name='Nowcast_R', na_values=['.'], engine='openpyxl',
-                           converters={4: invert_thousends,
-                                       7: invert_decimal_sep,
-                                       8: invert_decimal_sep,
-                                       9: invert_decimal_sep,
-                                       10: invert_decimal_sep,
-                                       11: invert_decimal_sep,
-                                       12: invert_decimal_sep})
-    df_src.iloc[:, [0]] = df_src.iloc[:, [0]].applymap(convert_date)
+    df = (
+        pd.read_excel(
+            io.BytesIO(cloudscraper.create_scraper().get(url, stream=True).content), 
+            sheet_name='Nowcast_R', 
+            na_values=['.'], 
+            engine='openpyxl',
+            index_col='Datum des Erkrankungsbeginns',
+            parse_dates=True,
+            date_parser=lambda s: pd.to_datetime(s, format="%d.%m.%Y")
+        )
+        .rename_axis(index='date')
+        .pipe(lambda df:
+              pd.concat({
+                  'daily': df['Punktschätzer der Anzahl Neuerkrankungen'].rename('delta'),
+                  '4-day': df.rename(columns={
+                      'Punktschätzer der 4-Tages R-Wert': 'R',
+                      'Untere Grenze des 95%-Prädiktionsintervalls der 4-Tages R-Wert': 'low',
+                      'Obere Grenze des 95%-Prädiktionsintervalls der 4-Tages R-Wert': 'high',
+                  })[['R', 'low', 'high']],
+                  '7-day': df.rename(columns={
+                      'Punktschätzer des 7-Tage-R Wertes': 'R',
+                      'Untere Grenze des 95%-Prädiktionsintervalls des 7-Tage-R Wertes': 'low',
+                      'Obere Grenze des 95%-Prädiktionsintervalls des 7-Tage-R Wertes': 'high',
+                  })[['R', 'low', 'high']]
+              }, axis='columns')
+        )
+    )
 
-    # extract data series of interest from the downloaded files
-    dfdeltacase = df_src.iloc[:, [0, 4]].dropna().reset_index(drop=True)
-    dfdeltacase.columns = ['date', 'deltacase']
-    dfdeltacase = dfdeltacase.astype(dict(deltacase='int'))
-    df = df_src.iloc[:, [0, 7, 8, 9]].dropna().reset_index(drop=True)
-    df.columns = ['date', 'R', 'low', 'up']
-    df = df.astype(dict(R='float', low='float', up='float'))
-    df7 = df_src.iloc[:, [0, 10, 11, 12]].dropna().reset_index(drop=True)
-    df7.columns = ['date', 'R', 'low', 'up']
-    df7 = df7.astype(dict(R='float', low='float', up='float'))
+    dfdeltacase = df.daily.reset_index()
+    df4 = df['4-day'].dropna().reset_index()
+    df7 = df['7-day'].dropna().reset_index()
 
     today = date.today()
 
     # plot cases, r and 7-day r
     fig, ax = plt.subplots()
-    ax.fill_between(df7.date, df7.low, df7.up, alpha=.5)
+    ax.fill_between(df7.date, df7.low, df7.high, alpha=.5)
     ax.plot(df7.date, df7.R, marker='o', markersize=2, label="7-day R", alpha=1)
-    ax.plot(df.date, df.R, c='gray', label='daily R', alpha=.4)
+    ax.plot(df4.date, df4.R, c='gray', label='daily R', alpha=.4)
     fig.legend(loc=(.7, .85))
     ax.set_ylim((0, None))
     ax2 = ax.twinx()
@@ -76,7 +61,7 @@ def gen_plot():
     ax2.set_ylim(tuple(map(mul, ax.get_ylim(), repeat(5000))))
 
     # zero line
-    ax.plot((df.date.iloc[[0, -1]][0], today), (1, 1), c='r')
+    ax.plot((df4.date.iloc[[0, -1]][0], today), (1, 1), c='r')
     # today
     ax.plot((today, today), ax.get_ylim(), c='.5', linestyle='--')
     ax.annotate('Today', (today, 2.5), xytext=(.85, .75), textcoords='axes fraction',
