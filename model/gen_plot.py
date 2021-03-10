@@ -57,7 +57,7 @@ def gen_plot():
     fig.legend(loc=(.7, .85))
     ax.set_ylim((0, None))
     ax2 = ax.twinx()
-    ax2.fill_between(dfdeltacase.date, 0, dfdeltacase.deltacase, label="daily cases", alpha=.15)
+    ax2.fill_between(dfdeltacase.date, 0, dfdeltacase.delta, label="daily cases", alpha=.15)
     ax2.set_ylim(tuple(map(mul, ax.get_ylim(), repeat(5000))))
 
     # zero line
