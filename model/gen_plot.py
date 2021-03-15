@@ -1,6 +1,7 @@
 import io
 from datetime import date
 from itertools import repeat
+from numbers import Number
 from operator import mul
 
 import cloudscraper
@@ -13,13 +14,17 @@ from matplotlib.ticker import MultipleLocator
 DPI = 90
 
 
-def english_floats(f):
+def english_floats(s):
+    if isinstance(s, Number):
+        return s
     # convert all . to ,
-    return f.replace(',', '.')
+    return s.replace(',', '.')
 
 
-def remove_thousends(f):
-    return f.replace('.', '')
+def remove_thousends(s):
+    if isinstance(s, Number):
+        return s
+    return s.replace('.', '')
 
 
 def gen_plot():
