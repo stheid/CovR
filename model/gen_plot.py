@@ -1,15 +1,14 @@
-import io
-from datetime import date
-from itertools import repeat
-from numbers import Number
-from operator import mul
-
 import cloudscraper
+import io
 import matplotlib.pyplot as plt
 import pandas as pd
+from datetime import date
+from itertools import repeat
 # import requests
 from matplotlib.dates import WeekdayLocator, DateFormatter, DayLocator, MO
 from matplotlib.ticker import MultipleLocator
+from numbers import Number
+from operator import mul
 
 DPI = 90
 
@@ -47,19 +46,11 @@ def gen_plot():
                         12: english_floats}
         )
             .rename_axis(index='date')
-            .pipe(lambda df:
+            .pipe(lambda df_:
                   pd.concat({
-                      'daily': df['Punktschätzer der Anzahl Neuerkrankungen'].rename('delta'),
-                      '4-day': df.rename(columns={
-                          'Punktschätzer der 4-Tages R-Wert': 'R',
-                          'Untere Grenze des 95%-Prädiktionsintervalls der 4-Tages R-Wert': 'low',
-                          'Obere Grenze des 95%-Prädiktionsintervalls der 4-Tages R-Wert': 'high',
-                      })[['R', 'low', 'high']],
-                      '7-day': df.rename(columns={
-                          'Punktschätzer des 7-Tage-R Wertes': 'R',
-                          'Untere Grenze des 95%-Prädiktionsintervalls des 7-Tage-R Wertes': 'low',
-                          'Obere Grenze des 95%-Prädiktionsintervalls des 7-Tage-R Wertes': 'high',
-                      })[['R', 'low', 'high']]
+                      'daily': df_.iloc[:, 3].rename('delta'),
+                      '4-day': df_.iloc[:, [6, 7, 8]].set_axis(['R', 'low', 'high'], axis='columns', inplace=False),
+                      '7-day': df_.iloc[:, [9, 10, 11]].set_axis(['R', 'low', 'high'], axis='columns', inplace=False)
                   }, axis='columns')
                   )
     )
