@@ -13,37 +13,15 @@ from operator import mul
 DPI = 90
 
 
-def english_floats(s):
-    if isinstance(s, Number):
-        return s
-    # convert all . to ,
-    return s.replace(',', '.')
-
-
-def remove_thousends(s):
-    if isinstance(s, Number):
-        return s
-    return s.replace('.', '')
-
-
 def gen_plot():
-    url = "https://www.rki.de/DE/Content/InfAZ/N/Neuartiges_Coronavirus/Projekte_RKI/Nowcasting_Zahlen.xlsx?__blob=publicationFile"
+    url = "https://raw.githubusercontent.com/robert-koch-institut/SARS-CoV-2-Nowcasting_und_-R-Schaetzung/main/Nowcast_R_aktuell.csv"
     df = (
-        pd.read_excel(
+        pd.read_csv(
             io.BytesIO(cloudscraper.create_scraper().get(url, stream=True).content),
-            sheet_name='Nowcast_R',
             na_values=['.'],
-            engine='openpyxl',
-            index_col='Datum des Erkrankungsbeginns',
+            index_col='Datum',
             parse_dates=True,
-            date_parser=lambda s: pd.to_datetime(s, format="%d.%m.%Y"),
-            converters={4: remove_thousends,
-                        7: english_floats,
-                        8: english_floats,
-                        9: english_floats,
-                        10: english_floats,
-                        11: english_floats,
-                        12: english_floats}
+            date_parser=lambda s: pd.to_datetime(s, format="%Y-%m-%d"),
         )
             .rename_axis(index='date')
             .pipe(lambda df_:
@@ -89,9 +67,9 @@ def gen_plot():
 
     ax.yaxis.set_minor_locator(MultipleLocator(.1))
     ax.xaxis.set_major_formatter(DateFormatter('%d. %h \'%y'))
-    ax.xaxis.set_major_locator(DayLocator([1, 15]))
+    ax.xaxis.set_major_locator(DayLocator([1]))
     ax.xaxis.set_minor_locator(WeekdayLocator(MO))
-    fig.autofmt_xdate(rotation=20)
+    fig.autofmt_xdate(rotation=30)
     ax.grid(which="major")
     ax.grid(which="minor", ls=':', alpha=.5)
     ax.set_xlabel('date')
