@@ -27,16 +27,12 @@ def gen_plot():
             .pipe(lambda df_:
                   pd.concat({
                       'daily': df_.iloc[:, 3].rename('delta'),
-                      '4-day': df_.iloc[:, [6, 7, 8]].set_axis(['R', 'low', 'high'], axis='columns', inplace=False),
-                      '7-day': df_.iloc[:, [9, 10, 11]].set_axis(['R', 'low', 'high'], axis='columns', inplace=False)
+                      '7-day': df_.iloc[:, [6, 7, 8]].set_axis(['R', 'low', 'high'], axis='columns', inplace=False)
                   }, axis='columns')
                   )
     )
 
     dfdeltacase = df.daily.astype(dict(delta='int')).reset_index()
-    df4 = (df['4-day'].dropna()
-           .astype(dict(R='float', low='float', high='float'))
-           .reset_index())
     df7 = (df['7-day'].dropna()
            .astype(dict(R='float', low='float', high='float'))
            .reset_index())
@@ -47,7 +43,6 @@ def gen_plot():
     fig, ax = plt.subplots()
     ax.fill_between(df7.date, df7.low, df7.high, alpha=.5)
     ax.plot(df7.date, df7.R, marker='o', markersize=2, label="7-day R", alpha=1)
-    ax.plot(df4.date, df4.R, c='gray', label='daily R', alpha=.4)
     fig.legend(loc=(.7, .85))
     ax.set_ylim((0, None))
     ax2 = ax.twinx()
@@ -55,7 +50,7 @@ def gen_plot():
     ax2.set_ylim(tuple(map(mul, ax.get_ylim(), repeat(5000))))
 
     # zero line
-    ax.plot((df4.date.iloc[[0, -1]][0], today), (1, 1), c='r')
+    ax.plot((df7.date.iloc[[0, -1]][0], today), (1, 1), c='r')
     # today
     ax.plot((today, today), ax.get_ylim(), c='.5', linestyle='--')
     ax.annotate('Today', (today, 2.5), xytext=(.85, .75), textcoords='axes fraction',
